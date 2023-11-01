@@ -1,0 +1,116 @@
+---
+title: "Retirement simulation"
+format: dashboard
+server: shiny
+execute:
+  daemon: false
+---
+
+```{python}
+#| context: setup
+import seaborn as sns
+import math
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from shiny import render, reactive, ui
+```
+
+## Row
+
+```{python}
+ui.input_slider("n_years", "Number of years", 0, 40, value=20)
+
+ui.input_slider("start_capital", "Initial capital invested", 1e5, 1e7, value=2e6, pre="$")
+
+ui.input_slider("return_mean", "Annual investment return", 0, 30, value=5, post="%")
+
+ui.input_slider("return_stdev", "Annual investment volatility", 0, 25, value=7, post="%")
+```
+
+```{python}
+ui.input_slider("inflation_mean", "Annual inflation)", 0, 20, value=2.5, post="%")
+
+ui.input_slider("inflation_stdev", "Annual inflation volatility", 0, 5, value=1.5, post="%")
+
+ui.input_slider("monthly_withdrawal", "Monthly capital withdrawals", 1e3, 1e5, value=1e4, pre="$")
+
+ui.input_slider("n_simulations", "Number of simulations", 1, 2000, value=200)
+```
+
+## Row
+
+
+```{python}
+def create_matrix(rows, cols, mean, stdev):
+    x = np.random.randn(rows, cols)
+    x = mean + x * stdev
+    return x
+
+
+def simulate_nav(
+    start_capital,
+    return_mean,
+    return_stdev,
+    inflation_mean,
+    inflation_stdev,
+    monthly_withdrawal,
+    n_years,
+    n_simulations
+):
+    # Convert annual values to monthly
+    n_months = 12 * n_years
+    monthly_return_mean = return_mean / 12
+    monthly_return_stdev = return_stdev / math.sqrt(12)
+    monthly_inflation_mean = inflation_mean / 12
+    monthly_inflation_stdev = inflation_stdev / math.sqrt(12)
+
+    # Simulate returns and inflation
+    monthly_returns = create_matrix(
+        n_months, n_simulations, monthly_return_mean, monthly_return_stdev
+    )
+    monthly_inflation = create_matrix(
+        n_months, n_simulations, monthly_inflation_mean, monthly_inflation_stdev
+    )
+
+    # Simulate withdrawals
+    nav = np.full((n_months + 1, n_simulations), float(start_capital))
+    for j in range(n_months):
+        nav[j + 1, :] = (
+            nav[j, :] *
+            (1 + monthly_returns[j, :] - monthly_inflation[j, :]) -
+            monthly_withdrawal
+        )
+
+    # Set nav values below 0 to NaN (Not a Number, which is equivalent to NA in R)
+    nav[nav < 0] = np.nan
+
+    # convert to millions
+    nav = nav / 1000000
+
+    return nav
+
+
+@render.plot
+def nav_a():
+    nav = simulate_nav(
+        input.start_capital(),
+        input.return_mean() / 100,
+        input.return_stdev() / 100,
+        input.inflation_mean() / 100,
+        input.inflation_stdev() / 100,
+        input.monthly_withdrawal(),
+        input.n_years(),
+        input.n_simulations()
+    )
+
+    nav_df = pd.DataFrame(nav)
+
+    for column in nav_df.columns:
+        plt.plot(nav_df.index, nav_df[column], alpha=0.3)
+
+    plt.title("Projected Value of Capital")
+    plt.xlabel("Months")
+    plt.ylabel("Millions")
+    plt.grid(True)
+```
