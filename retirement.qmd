@@ -18,6 +18,7 @@ from shiny import render, reactive, ui
 
 ```{python}
 #| title: Scenario A
+#| expandable: false
 
 ui.input_slider("start_capital", "Initial investment", 1e5, 1e7, value=2e6, pre="$")
 
@@ -31,6 +32,7 @@ ui.input_slider("monthly_withdrawal", "Monthly withdrawals", 0, 50000, value=100
 
 ```{python}
 #| title: Scenario B
+#| expandable: false
 
 ui.input_slider("start_capital2", "Initial investment", 1e5, 1e7, value=2e6, pre="$")
 
