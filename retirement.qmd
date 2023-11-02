@@ -1,6 +1,7 @@
 ---
 title: "Retirement: simulating wealth with random returns, inflation and withdrawals"
 format: dashboard
+logo: retirement-logo.png
 server: shiny
 execute:
   daemon: false
