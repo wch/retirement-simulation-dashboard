@@ -1,5 +1,5 @@
 ---
-title: "Retirement simulation"
+title: "Retirement: simulating wealth with random returns, inflation and withdrawals"
 format: dashboard
 server: shiny
 execute:
@@ -8,7 +8,6 @@ execute:
 
 ```{python}
 #| context: setup
-import seaborn as sns
 import math
 import numpy as np
 import pandas as pd
@@ -16,29 +15,83 @@ import matplotlib.pyplot as plt
 from shiny import render, reactive, ui
 ```
 
+## Row {.flow}
+
+
+```{python}
+#| expandable: false
+#| title: Scenario A
+
+ui.input_slider("start_capital", "Initial investment", 1e5, 1e7, value=2e6, pre="$")
+
+ui.input_slider("return_mean", "Average annual investment return", 0, 30, value=5, step=0.5, post="%")
+
+# ui.input_slider("return_stdev", "Annual investment volatility", 0, 25, value=7, step=0.5, post="%")
+
+ui.input_slider("inflation_mean", "Average annual inflation", 0, 20, value=2.5, step=0.5, post="%")
+
+# ui.input_slider("inflation_stdev", "Annual inflation volatility", 0, 5, value=1.5, step=0.5, post="%")
+
+ui.input_slider("monthly_withdrawal", "Monthly withdrawals", 0, 50000, value=10000, pre="$")
+```
+
+
+```{python}
+#| expandable: false
+#| title: Scenario B
+
+ui.input_slider("start_capital2", "Initial investment", 1e5, 1e7, value=2e6, pre="$")
+
+ui.input_slider("return_mean2", "Average annual investment return", 0, 30, value=5, step=0.5, post="%")
+
+# ui.input_slider("return_stdev2", "Annual investment volatility", 0, 25, value=7, step=0.5, post="%")
+
+ui.input_slider("inflation_mean2", "Average annual inflation", 0, 20, value=2.5, step=0.5, post="%")
+
+# ui.input_slider("inflation_stdev2", "Annual inflation volatility", 0, 5, value=1.5, step=0.5, post="%")
+
+ui.input_slider("monthly_withdrawal2", "Monthly withdrawals", 0, 50000, value=8000, step=500, pre="$")
+```
+
 ## Row
 
 ```{python}
-ui.input_slider("n_years", "Number of years", 0, 40, value=20)
+@render.plot()
+def nav_1():
+    nav_df = run_simulation(
+        input.start_capital(),
+        input.return_mean() / 100,
+        # input.return_stdev() / 100,
+        .07,
+        input.inflation_mean() / 100,
+        # input.inflation_stdev() / 100,
+        .015,
+        input.monthly_withdrawal(),
+        30,
+        100
+    )
 
-ui.input_slider("start_capital", "Initial capital invested", 1e5, 1e7, value=2e6, pre="$")
-
-ui.input_slider("return_mean", "Annual investment return", 0, 30, value=5, post="%")
-
-ui.input_slider("return_stdev", "Annual investment volatility", 0, 25, value=7, post="%")
+    return make_plot(nav_df)
 ```
 
 ```{python}
-ui.input_slider("inflation_mean", "Annual inflation)", 0, 20, value=2.5, post="%")
+@render.plot()
+def nav_2():
+    nav_df = run_simulation(
+        input.start_capital2(),
+        input.return_mean2() / 100,
+        # input.return_stdev2() / 100,
+        .07,
+        input.inflation_mean2() / 100,
+        # input.inflation_stdev2() / 100,
+        .015,
+        input.monthly_withdrawal2(),
+        30,
+        100
+    )
 
-ui.input_slider("inflation_stdev", "Annual inflation volatility", 0, 5, value=1.5, post="%")
-
-ui.input_slider("monthly_withdrawal", "Monthly capital withdrawals", 1e3, 1e5, value=1e4, pre="$")
-
-ui.input_slider("n_simulations", "Number of simulations", 1, 2000, value=200)
+    return make_plot(nav_df)
 ```
-
-## Row
 
 
 ```{python}
@@ -48,7 +101,7 @@ def create_matrix(rows, cols, mean, stdev):
     return x
 
 
-def simulate_nav(
+def run_simulation(
     start_capital,
     return_mean,
     return_stdev,
@@ -88,29 +141,44 @@ def simulate_nav(
     # convert to millions
     nav = nav / 1000000
 
-    return nav
+    return pd.DataFrame(nav)
 
 
-@render.plot
-def nav_a():
-    nav = simulate_nav(
-        input.start_capital(),
-        input.return_mean() / 100,
-        input.return_stdev() / 100,
-        input.inflation_mean() / 100,
-        input.inflation_stdev() / 100,
-        input.monthly_withdrawal(),
-        input.n_years(),
-        input.n_simulations()
-    )
+def make_plot(nav_df):
+    # # For the histogram, we will fill NaNs with -1
+    nav_df_zeros = nav_df.ffill().fillna(0).iloc[-1, :]
 
-    nav_df = pd.DataFrame(nav)
+    # Define the figure and axes
+    fig = plt.figure()
+
+    # Create the top plot for time series on the first row that spans all columns
+    ax1 = plt.subplot2grid((2, 2), (0, 0), colspan=2)
+
+    # Create the bottom left plot for the percentage above zero
+    ax2 = plt.subplot2grid((2, 2), (1, 0), colspan=2)
 
     for column in nav_df.columns:
-        plt.plot(nav_df.index, nav_df[column], alpha=0.3)
+        ax1.plot(nav_df.index, nav_df[column], alpha=0.3)
 
-    plt.title("Projected Value of Capital")
-    plt.xlabel("Months")
-    plt.ylabel("Millions")
-    plt.grid(True)
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.title.set_text("Projected value of capital over 30 years")
+    ax1.set_xlabel("Months")
+    ax1.set_ylabel("Millions")
+    ax1.grid(True)
+
+    # Calculate the percentage of columns that are above zero for each date and plot (bottom left plot)
+    percent_above_zero = (nav_df > 0).sum(axis=1) / nav_df.shape[1] * 100
+    ax2.plot(nav_df.index, percent_above_zero, color='purple')
+    ax2.set_xlim(nav_df.index.min(), nav_df.index.max())
+    ax2.set_ylim(0, 100)  # Percentage goes from 0 to 100
+    ax2.title.set_text("Percent of scenarios still paying")
+    ax2.spines['top'].set_visible(False)
+    ax2.spines['right'].set_visible(False)
+    ax2.set_xlabel("Months")
+    ax2.grid(True)
+
+    plt.tight_layout()
+
+    return fig
 ```
