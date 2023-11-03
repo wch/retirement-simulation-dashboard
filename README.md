@@ -5,7 +5,7 @@ This is a retirement savings simulation dashboard, built with [Quarto](https://q
 
 [![Screenshot of retirement simulation dashboard](./retirement-gallery.png)](https://wch.github.io/retirement-simulation-dashboard/)
 
-[Live dashboard](https://wch.github.io/retirement-simulation-dashboard/).
+[Live dashboard](https://wch.github.io/retirement-simulation-dashboard/)
 
 [Learn more](https://quarto.org/docs/dashboards/interactivity/shiny-python/index.html) about using Quarto and Shiny to create interactive dashboards
 
@@ -15,7 +15,7 @@ This is a retirement savings simulation dashboard, built with [Quarto](https://q
 This Quarto dashboard uses Shiny for interactivity and is deployed as a static web page to GitHub Pages.
 
 A static Quarto dashboard can be deployed to a static web host, such as GitHub Pages, because it requires no computation on the server. A Quarto dashboard that uses Shiny for interactivity requires Python running on the server, because
- normally must be deployed on a platform with servers running Python, such as [shinyapps.io](https://www.shinyapps.io/) (Posit's hosted platform) or [RStudio Connect](https://rstudio.com/products/connect/) (Posit's on-premises server platform).
+ normally must be deployed on a platform with servers running Python, such as [shinyapps.io](https://www.shinyapps.io/) (Posit's hosted platform) or [Posit Connect](https://posit.co/products/enterprise/connect/) (Posit's on-premises server platform).
 
 However, Quarto dashboard with Shiny can also be deployed to a static web host (with some limitations discussed below). This is done by using [Shinylive](https://shiny.posit.co/py/docs/shinylive.html), which is a special deployment mode of Shiny where, instead of running Python on a remote server, Python itself runs in the web browser. This means that the dashboard can be deployed as a static web page to any static web host, such as GitHub Pages.
 
