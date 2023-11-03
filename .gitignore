@@ -3,3 +3,5 @@ __pycache__/
 *-app.py
 *_files/
 *.html
+
+/.quarto/
