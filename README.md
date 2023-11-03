@@ -32,7 +32,7 @@ See the [Shinylive documentation](https://shiny.posit.co/py/docs/shinylive.html)
 
 ### Deployment instructions
 
-To deploy this dashboard to a static web host, first make sure [Quarto](https://quarto.org/docs/download/) (version 1.4.476 or higher) is installed. Then install the shinylive Python package. This package provides a command line tool named `shinylive`, which is used to convert a normal Shiny app to a Shinylive web page.
+To deploy this dashboard to a static web host, first make sure [Quarto](https://quarto.org/docs/download/) (version 1.4.478 or higher) is installed. Then install the shinylive Python package. This package provides a command line tool named `shinylive`, which is used to convert a normal Shiny app to a Shinylive web page.
 
 ```bash
 pip install shinylive --upgrade
